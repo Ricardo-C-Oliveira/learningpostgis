@@ -18,7 +18,7 @@ email: ricardo.oliveira@hotmail.com
 description: > # this means to ignore newlines until "baseurl:"
   Resources to get started with PostGIS.
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
+url: "http://learningpostgis.com" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: roliveiraGIS
 
 # Build settings
