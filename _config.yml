@@ -30,4 +30,3 @@ exclude:
   - Gemfile
   - Gemfile.lock
 
-baseurl: www.learningpostgis.com/
