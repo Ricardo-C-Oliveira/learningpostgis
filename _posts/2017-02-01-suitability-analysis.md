@@ -216,24 +216,38 @@ To close this tutorial, let’s see how all the analytical steps done above coul
 final result): 
 
 ```sql
-create table romo.final_habitat_2 as select ST_Intersection(i.geom, (select ST_Union(p.geom) from (
-select * from romo.vegetation where mapclass like '%Pine%') as p, 
-romo_bnd as b where ST_Intersects(p.geom, b.geom))) as geom 
+-- Define the name of the table will be created
+create table romo.final_habitat_2 as 
+-- Find areas that are common between the Pine and inhydrohuman
+select ST_Intersection(inthydrohuman.geom, (
+-- Union all geoemetries from the vegetation table where mapclass contains any string with Pine on it
+select ST_Union(pine.geom) from (
+select * from romo.vegetation where mapclass like '%Pine%') as pine, 
+romo_bnd as boundary
+-- Use only the Pine geometries that are within the park boundary
+where ST_Intersects(pine.geom, boundary.geom))) as geom 
 from (
-select ST_Intersection(a.geom, h.geom) as geom from 
-(select ST_Union(n.geom) as geom
+-- Find the areas that are within the hydro bufffers but far from the humand buffers
+select ST_Intersection(outhumanbuffers.geom, hydrobuffers.geom) as geom from 
+-- Union the geometries of the unioned hydrobuffers
+(select ST_Union(hydrobuffers.geom) as geom
 from(
+-- Buffer streams and lakes and combine the geometries into a single table
+-- Since geometries still separeted we need the ST_Union above
 select gid, ST_Buffer(geom, 100) as geom from romo.lakes
 union all
-select gid, ST_Buffer(geom, 100) as geom from romo.streams) as n) as h, 
-(select ST_Difference(b.geom, 
-(select ST_Union(n.geom) from
+select gid, ST_Buffer(geom, 100) as geom from romo.streams) as hydrobuffers) as hydrobuffers, 
+(select ST_Difference(boundary.geom,
+-- Union the geometries of the unioned humanbuffers
+(select ST_Union(humanbuffers.geom) from
+-- Buffer roads, trail, and campsite and combine the geometries into a single table
+-- Since geometries still separeted we need the ST_Union above
 (select gid, ST_Buffer(geom, 150) as geom from romo.roads
 union all
 select gid, ST_Buffer(geom, 100) as geom from romo.trails
 union all
-select gid, ST_Buffer(geom, 200) as geom from romo.campsites) as n)) 
-as geom from romo.romo_bnd as b) as a) as i;
+select gid, ST_Buffer(geom, 200) as geom from romo.campsites) as humanbuffers)) 
+as geom from romo.romo_bnd as boundary) as outhumanbuffers) as inthydrohuman;
 ```
 
 
