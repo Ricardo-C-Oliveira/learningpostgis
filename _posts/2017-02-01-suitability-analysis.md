@@ -115,7 +115,7 @@ In all_near_human now we have a single geometry representing the union of the bu
 
 ```sql
 CREATE TABLE  away_human AS 
-  SELECT St_difference(b.geom, n.geom) 
+  SELECT St_difference(b.geom, n.geom) AS geom
   FROM    romo_bnd AS b, 
           all_near_human AS n;
 ```
@@ -124,7 +124,7 @@ Just for the purpose of learning more SQL structures and syntax we will combine 
 
 ```sql
 CREATE TABLE  away_human AS 
-  SELECT St_difference(b.geom, (SELECT St_union(n.geom)AS geom 
+  SELECT St_difference(b.geom, (SELECT St_union(n.geom) AS geom 
                                 FROM    near_human AS n)) AS geom 
   FROM    romo_bnd AS b; 
   ```
@@ -191,19 +191,31 @@ The result would look like this:
 
 ![Intersection Human Water]({{ site.baseurl }}/images/int_human_h2o.png)
 
-Finally we will use the UpdateGeometrySRID( ) function to update the spatial reference system identifier (SRID) of our final result final_habitat. In this case we will set it to 26913 which is UTM NAD 83 Zone 13 (http://spatialreference.org/ref/epsg/nad83-utm-zone-13n/).
+Finaly, the last intersection between the intersect_human_h2o and the vegetation table:
+
+```sql
+create table romo.final_habitat 
+select st_intersection(p.geom, (select st_intersection(a.geom, h.geom as geom)as geom
+from romo.near_h2o as h, romo.away_human as a)) as geom
+from romo.pine as p;
+```
+
+So far we have been playing with our geometries without worring too much about their projection, this is becuase all our data is the same projection. But once we finish our analysis we need to make
+ our database aware of the projection for that finel data set so we will use the UpdateGeometrySRID( ) function to update the spatial reference system identifier (SRID) of our final result 
+ final_habitat. In this case we will set it to 26913 which is UTM NAD 83 Zone 13 [http://spatialreference.org/ref/epsg/26913/](http://spatialreference.org/ref/epsg/26913/).
 
 ```sql
 select UpdateGeometrySRID(' final_habitat', 'geom', 26913);
 ```
 
-One optional step that is highly recommended is to create spatial indexes on tables that will be used frequently. Index are important as they greatly speed up queries and other processes. For this we use the CREATE INDEX statement.
+One optional step, but that is highly recommended is to create spatial indexes on tables that will be used frequently. Index are important as they greatly speed up queries and other processes. For 
+this we use the CREATE INDEX statement.
 
 ```sql
 Create index geom_idx ON  final_habitat USING GIST (geom);
 ```
 
-To close this tutorial, let’s see how all the analytical steps done above could be combined into a single SQL query as follows (we use the name final_habitat_2 to avoid over writing our previous 
+To close this tutorial, let’s see how all the analytical steps done above could be combined into a single SQL query as follows (we use the name final_habitat_2 to avoid overwriting our previous 
 final result): 
 
 ```sql
